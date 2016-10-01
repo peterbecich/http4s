@@ -6,8 +6,11 @@ package blaze
 import org.http4s.blaze.pipeline.Command
 import org.log4s.getLogger
 
-import scalaz.concurrent.Task
+import fs2.Task
 import scalaz.{-\/, \/-}
+import cats.data.Xor
+import cats.data.Xor.Right
+import cats.data.Xor.Left
 
 /** Blaze client implementation */
 object BlazeClient {
@@ -40,12 +43,12 @@ object BlazeClient {
         ts.initialize()
 
         next.connection.runRequest(req, flushPrelude).attempt.flatMap {
-          case \/-(r)  =>
+          case Right(r)  =>
             val dispose = Task.delay(ts.removeStage)
               .flatMap { _ => manager.release(next.connection) }
             Task.now(DisposableResponse(r, dispose))
 
-          case -\/(Command.EOF) =>
+          case Left(Command.EOF) =>
             invalidate(next.connection).flatMap { _ =>
               if (next.fresh) Task.fail(new java.io.IOException(s"Failed to connect to endpoint: $key"))
               else {
@@ -55,7 +58,7 @@ object BlazeClient {
               }
             }
 
-          case -\/(e) =>
+          case Left(e) =>
             invalidate(next.connection).flatMap { _ =>
               Task.fail(e)
             }

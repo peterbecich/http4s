@@ -62,9 +62,8 @@ package object http4s { // scalastyle:ignore
       Service.const(Response.fallthrough)
   }
 
-<<<<<<< HEAD
   type Callback[A] = Attempt[A] => Unit
-=======
+
   object AuthedService {
     /**
       * Lifts a total function to an `HttpService`. The function is expected to
@@ -83,9 +82,6 @@ package object http4s { // scalastyle:ignore
     val empty: HttpService =
       Service.const(Response.fallthrough)
   }
-
-  type Callback[A] = Throwable \/ A => Unit
->>>>>>> f598d33aca65e9fd85696d2bb01155b0686a65a9
 
   /* TODO fs2 port
   /** A stream of server-sent events */

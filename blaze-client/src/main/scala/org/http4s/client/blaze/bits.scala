@@ -13,7 +13,7 @@ import org.http4s.util.threads
 
 import scala.concurrent.duration._
 import scala.math.max
-import scalaz.concurrent.Task
+import fs2.Task
 
 private[blaze] object bits {
   // Some default objects

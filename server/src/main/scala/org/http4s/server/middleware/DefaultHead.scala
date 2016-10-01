@@ -2,7 +2,7 @@ package org.http4s
 package server
 package middleware
 
-import scalaz.concurrent.Task
+import fs2.Task
 import org.http4s.server.syntax._
 
 /** Handles HEAD requests as a GET without a body.

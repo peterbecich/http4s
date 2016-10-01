@@ -4,6 +4,9 @@ package middleware
 
 import fs2._
 
+import cats.data.Xor.Right
+import cats.data.Xor.Left
+
 package object authentication {
   // A function mapping (realm, username) to password, None if no password
   // exists for that (realm, username) pair.
@@ -13,9 +16,9 @@ package object authentication {
                    (service: AuthedService[A]): HttpService =
     Service.lift { req =>
       challenge(req) flatMap {
-        case \/-(authedRequest) =>
+        case Right(authedRequest) =>
           service(authedRequest)
-        case -\/(challenge) =>
+        case Left(challenge) =>
           Task.now(Response(Status.Unauthorized).putHeaders(`WWW-Authenticate`(challenge)))
       }
     }

@@ -1,6 +1,10 @@
 package org.http4s
-import scalaz._, Scalaz._
-import scalaz.concurrent.Task
+// import scalaz._, Scalaz._
+// import scalaz.concurrent.Task
+
+import cats.data.Kleisli
+
+import fs2.Task
 
 case class AuthedRequest[A](authInfo: A, req: Request)
 

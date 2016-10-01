@@ -2,6 +2,11 @@ package org.http4s
 
 import fs2._
 
+import cats.data.Kleisli
+import cats.data.Xor
+import cats.data.Xor.Right
+import cats.data.Xor.Left
+
 package object server {
   /**
    * A middleware is a function of one [[Service]] to another, possibly of a
@@ -36,9 +41,9 @@ package object server {
     def apply[T](authUser: Service[Request, T]): AuthMiddleware[T] = {
       service => service.compose(AuthedRequest(authUser))
     }
-    def apply[Err, T](authUser: Service[Request, Err \/ T], onFailure: Kleisli[Task, AuthedRequest[Err], Response]): AuthMiddleware[T] = { service =>
+    def apply[Err, T](authUser: Service[Request, Xor[Err,T]], onFailure: Kleisli[Task, AuthedRequest[Err], Response]): AuthMiddleware[T] = { service =>
       (onFailure ||| service)
-        .local({authed: AuthedRequest[Err \/ T] => authed.authInfo.bimap(err => AuthedRequest(err, authed.req), suc => AuthedRequest(suc, authed.req))})
+        .local({authed: AuthedRequest[Xor[Err,T]] => authed.authInfo.bimap(err => AuthedRequest(err, authed.req), suc => AuthedRequest(suc, authed.req))})
         .compose(AuthedRequest(authUser))
     }
   }
