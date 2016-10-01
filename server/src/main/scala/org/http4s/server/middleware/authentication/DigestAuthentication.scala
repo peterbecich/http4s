@@ -7,6 +7,9 @@ import java.security.SecureRandom
 import java.math.BigInteger
 import java.util.Date
 
+import org.http4s.headers.Authorization
+import org.http4s.{AuthedRequest, AuthedService}
+
 import scala.concurrent.duration._
 
 import cats.data._
@@ -28,7 +31,7 @@ import org.http4s.headers._
  *                       purposes anymore).
  * @param nonceBits The number of random bits a nonce should consist of.
  */
-class DigestAuthentication(realm: String, store: AuthenticationStore, nonceCleanupInterval: Duration = 3600.seconds, nonceStaleTime: Duration = 3600.seconds, nonceBits: Int = 160) extends Authentication {
+object digestAuth {
 
   private trait AuthReply
   private sealed case class OK(user: String, realm: String) extends AuthReply
@@ -40,7 +43,18 @@ class DigestAuthentication(realm: String, store: AuthenticationStore, nonceClean
   private case object NoCredentials extends AuthReply
   private case object NoAuthorizationHeader extends AuthReply
 
-  private val nonceKeeper = new NonceKeeper(nonceStaleTime.toMillis, nonceCleanupInterval.toMillis, nonceBits)
+  def apply(
+    realm: String,
+    store: AuthenticationStore,
+    nonceCleanupInterval: Duration = 1.hour,
+    nonceStaleTime: Duration = 1.hour,
+    nonceBits: Int = 160
+  ): AuthMiddleware[(String, String)] = {
+    val nonceKeeper = new NonceKeeper(nonceStaleTime.toMillis, nonceCleanupInterval.toMillis, nonceBits)
+    challenged(Service.lift { req =>
+      getChallenge(realm, store, nonceKeeper, req)
+    })
+  }
 
   /** Side-effect of running the returned task: If req contains a valid
     * AuthorizationHeader, the corresponding nonce counter (nc) is increased.
@@ -54,10 +68,13 @@ class DigestAuthentication(realm: String, store: AuthenticationStore, nonceClean
     })
   }
 
-  private def checkAuth(req: Request): Task[AuthReply] = req.headers.get(Authorization) match {
-      case Some(Authorization(GenericCredentials(AuthScheme.Digest, params))) => checkAuthParams(req, params)
-      case Some(Authorization(_)) => Task.now(NoCredentials)
-      case None => Task.now(NoAuthorizationHeader)
+  private def checkAuth(realm: String, store: AuthenticationStore, nonceKeeper: NonceKeeper, req: Request): Task[AuthReply] = req.headers.get(Authorization) match {
+    case Some(Authorization(GenericCredentials(AuthScheme.Digest, params))) =>
+      checkAuthParams(realm, store, nonceKeeper, req, params)
+    case Some(Authorization(_)) =>
+      Task.now(NoCredentials)
+    case None =>
+      Task.now(NoAuthorizationHeader)
   }
 
   private def getChallengeParams(staleNonce: Boolean): Task[Map[String, String]] = Task.delay {
@@ -69,7 +86,7 @@ class DigestAuthentication(realm: String, store: AuthenticationStore, nonceClean
       m
   }
 
-  private def checkAuthParams(req: Request, params: Map[String, String]): Task[AuthReply] = {
+  private def checkAuthParams(realm: String, store: AuthenticationStore, nonceKeeper: NonceKeeper, req: Request, params: Map[String, String]): Task[AuthReply] = {
     if (!(Set("realm", "nonce", "nc", "username", "cnonce", "qop") subsetOf params.keySet))
       return Task.now(BadParameters)
 

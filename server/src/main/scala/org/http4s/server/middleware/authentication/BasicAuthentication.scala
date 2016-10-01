@@ -14,7 +14,11 @@ import org.http4s.headers._
  * @param store A partial function mapping (realm, user) to the
  *              appropriate password.
  */
-class BasicAuthentication(realm: String, store: AuthenticationStore) extends Authentication {
+object basicAuth {
+  def apply(realm: String, store: AuthenticationStore): AuthMiddleware[(String, String)] =
+    challenged(Service.lift { req =>
+      getChallenge(realm, store, req)
+    })
 
   private trait AuthReply
   private sealed case class OK(user: String, realm: String) extends AuthReply
@@ -25,7 +29,7 @@ class BasicAuthentication(realm: String, store: AuthenticationStore) extends Aut
     case NeedsAuth       => Xor.left(Challenge("Basic", realm, Nil.toMap))
   }
 
-  private def checkAuth(req: Request): Task[AuthReply] = {
+  private def checkAuth(realm: String, store: AuthenticationStore, req: Request): Task[AuthReply] = {
     req.headers.get(Authorization) match {
       case Some(Authorization(BasicCredentials(user, client_pass))) =>
         store(realm, user).map {

@@ -3,10 +3,7 @@ import Keys._
 
 import scala.util.Properties.envOrNone
 
-object Http4sBuild extends Build {
-  // keys
-  val apiVersion = TaskKey[(Int, Int)]("api-version", "Defines the API compatibility version for the project.")
-  val jvmTarget = TaskKey[String]("jvm-target-version", "Defines the target JVM version for object files.")
+object Http4sBuild {
 
   def extractApiVersion(version: String) = {
     val VersionExtractor = """(\d+)\.(\d+)\..*""".r
@@ -39,7 +36,6 @@ object Http4sBuild extends Build {
       }
     ).flatten
 
-  val scalazVersion = settingKey[String]("The version of Scalaz used for building.")
   def scalazCrossBuild(version: String, scalazVersion: String) =
     VersionNumber(scalazVersion).numbers match {
       case Seq(7, 1, _*) =>
@@ -94,7 +90,7 @@ object Http4sBuild extends Build {
   lazy val metricsServlets     = "io.dropwizard.metrics"     % "metrics-servlets"        % metricsCore.revision
   lazy val metricsJson         = "io.dropwizard.metrics"     % "metrics-json"            % metricsCore.revision
   lazy val parboiled           = "org.parboiled"            %% "parboiled"               % "2.1.2"
-  lazy val quasiquotes         = "org.scalamacros"          %% "quasiquotes"             % "2.1.0"  
+  lazy val quasiquotes         = "org.scalamacros"          %% "quasiquotes"             % "2.1.0"
   lazy val reactiveStreamsTck  = "org.reactivestreams"       % "reactive-streams-tck"    % "1.0.0"
   def scalaCompiler(sv: String) = "org.scala-lang"           % "scala-compiler"          % sv
   def scalaReflect(sv: String) = "org.scala-lang"            % "scala-reflect"           % sv
@@ -109,4 +105,5 @@ object Http4sBuild extends Build {
   lazy val tomcatCatalina      = "org.apache.tomcat"         % "tomcat-catalina"         % "8.0.36"
   lazy val tomcatCoyote        = "org.apache.tomcat"         % "tomcat-coyote"           % tomcatCatalina.revision
   lazy val twirlApi            = "com.typesafe.play"        %% "twirl-api"               % "1.2.0"
+  lazy val cryptbits           = "org.reactormonk"          %% "cryptobits"              % "1.0"
 }

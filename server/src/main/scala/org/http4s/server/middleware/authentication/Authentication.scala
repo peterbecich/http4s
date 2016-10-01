@@ -41,4 +41,3 @@ trait Authentication extends HttpMiddleware {
     }
   }
 }
-
