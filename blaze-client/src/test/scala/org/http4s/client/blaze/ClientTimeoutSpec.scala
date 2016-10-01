@@ -11,10 +11,13 @@ import scodec.bits.ByteVector
 
 import scala.concurrent.TimeoutException
 import scala.concurrent.duration._
-import scalaz.concurrent.{Strategy, Task}
+
+// import scalaz.concurrent.{Strategy, Task}
 import scalaz.concurrent.Strategy.DefaultTimeoutScheduler
 import scalaz.stream.Process
 import scalaz.stream.time
+
+import fs2.Task
 
 class ClientTimeoutSpec extends Http4sSpec {
 

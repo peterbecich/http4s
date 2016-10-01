@@ -7,7 +7,6 @@ import org.http4s.blaze.pipeline.Command
 import org.log4s.getLogger
 
 import fs2.Task
-import scalaz.{-\/, \/-}
 import cats.data.Xor
 import cats.data.Xor.Right
 import cats.data.Xor.Left
