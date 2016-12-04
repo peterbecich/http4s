@@ -20,18 +20,18 @@ private object ProtocolSelector {
             maxRequestLineLen: Int,
             maxHeadersLen: Int,
             requestAttributes: AttributeMap,
-            es: ExecutorService): ALPNSelector = {
+            ec: ExecutionContext): ALPNSelector = {
 
     def http2Stage(): TailStage[ByteBuffer] = {
 
       val newNode = { streamId: Int =>
-        LeafBuilder(new Http2NodeStage(streamId, Duration.Inf, es, requestAttributes, service))
+        LeafBuilder(new Http2NodeStage(streamId, Duration.Inf, ec, requestAttributes, service))
       }
 
       Http2Stage(
         nodeBuilder = newNode,
         timeout = Duration.Inf,
-        ec = ExecutionContext.fromExecutor(es),
+        ec = ec,
         // since the request line is a header, the limits are bundled in the header limits
         maxHeadersLength = maxHeadersLen,
         maxInboundStreams = 256 // TODO: this is arbitrary...
@@ -39,7 +39,7 @@ private object ProtocolSelector {
     }
 
     def http1Stage(): TailStage[ByteBuffer] = {
-      Http1ServerStage(service, requestAttributes, es, false, maxRequestLineLen, maxHeadersLen)
+      Http1ServerStage(service, requestAttributes, ec, false, maxRequestLineLen, maxHeadersLen)
     }
 
     def preference(protos: Seq[String]): String = {

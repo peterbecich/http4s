@@ -9,11 +9,11 @@ class BlazeServerSpec extends ServerAddressSpec {
 
     // This test just needs to finish to pass, failure will hang
     "Startup and shutdown without blocking" in {
-      val s = BlazeBuilder
+      val server = BlazeBuilder
         .bindAny()
-        .start.run
+        .start.unsafeRun()
 
-      s.shutdownNow()
+      server.shutdownNow()
 
       true must_== true
     }

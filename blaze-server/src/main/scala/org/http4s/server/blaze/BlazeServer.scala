@@ -11,6 +11,7 @@ import java.util.concurrent.ExecutorService
 import javax.net.ssl._
 
 import scala.concurrent.duration._
+import scala.concurrent.ExecutionContext
 
 import fs2._
 import org.http4s.blaze.channel
@@ -24,7 +25,7 @@ import org.log4s.getLogger
 
 class BlazeBuilder(
   socketAddress: InetSocketAddress,
-  serviceExecutor: ExecutorService,
+  serviceExecutor: ExecutionContext,
   idleTimeout: Duration,
   isNio2: Boolean,
   connectorPoolSize: Int,
@@ -46,7 +47,7 @@ class BlazeBuilder(
   private[this] val logger = getLogger
 
   private def copy(socketAddress: InetSocketAddress = socketAddress,
-                 serviceExecutor: ExecutorService = serviceExecutor,
+                 serviceExecutor: ExecutionContext = serviceExecutor,
                      idleTimeout: Duration = idleTimeout,
                           isNio2: Boolean = isNio2,
                connectorPoolSize: Int = connectorPoolSize,
@@ -81,7 +82,7 @@ class BlazeBuilder(
   override def bindSocketAddress(socketAddress: InetSocketAddress): BlazeBuilder =
     copy(socketAddress = socketAddress)
 
-  override def withServiceExecutor(serviceExecutor: ExecutorService): BlazeBuilder =
+  override def withServiceExecutor(serviceExecutor: ExecutionContext): BlazeBuilder =
     copy(serviceExecutor = serviceExecutor)
 
   override def withIdleTimeout(idleTimeout: Duration): BlazeBuilder = copy(idleTimeout = idleTimeout)
@@ -234,9 +235,10 @@ object BlazeBuilder extends BlazeBuilder(
   socketAddress = ServerBuilder.DefaultSocketAddress,
   // TODO fs2 port
   // This is garbage how do we shut this down I just want it to compile argh
-  serviceExecutor = org.http4s.util.threads.newDefaultFixedThreadPool(
-    4, org.http4s.util.threads.threadFactory(i => s"org.http4s.blaze.server.DefaultExecutor-$i")
-  ),
+  serviceExecutor = ExecutionContext.fromExecutorService(
+    org.http4s.util.threads.newDefaultFixedThreadPool(
+      4, org.http4s.util.threads.threadFactory(i => s"org.http4s.blaze.server.DefaultExecutor-$i")
+  )),
   idleTimeout = IdleTimeoutSupport.DefaultIdleTimeout,
   isNio2 = false,
   connectorPoolSize = channel.defaultPoolSize,

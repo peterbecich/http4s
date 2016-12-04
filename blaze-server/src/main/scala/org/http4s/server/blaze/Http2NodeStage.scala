@@ -26,7 +26,7 @@ import org.http4s.blaze.util._
 
 private class Http2NodeStage(streamId: Int,
                      timeout: Duration,
-                     executor: ExecutorService,
+                     executor: ExecutionContext,
                      attributes: AttributeMap,
                      service: HttpService) extends TailStage[NodeMsg.Http2Msg]
 {
@@ -34,8 +34,8 @@ private class Http2NodeStage(streamId: Int,
   import Http2StageTools._
   import NodeMsg.{ DataFrame, HeadersFrame }
 
-  private implicit def ec = ExecutionContext.fromExecutor(executor)   // for all the onComplete calls
-  private implicit val strategy = Strategy.fromExecutionContext(ec)
+  // private implicit def ec = ExecutionContext.fromExecutor(executor)   // for all the onComplete calls
+  private implicit val strategy = Strategy.fromExecutionContext(executor)
 
   override def name = "Http2NodeStage"
 
@@ -64,7 +64,7 @@ private class Http2NodeStage(streamId: Int,
         logger.error(t)("Unknown error in readHeaders")
         val e = INTERNAL_ERROR(s"Unknown error", streamId, fatal = true)
         shutdownWithCommand(Cmd.Error(e))
-    }
+    }(executor)
   }
 
   /** collect the body: a maxlen < 0 is interpreted as undefined */
@@ -116,7 +116,7 @@ private class Http2NodeStage(streamId: Int,
           val e = INTERNAL_ERROR(streamId, fatal = true)
           cb(left(e))
           shutdownWithCommand(Cmd.Error(e))
-      }
+      }(executor)
     }
 
     repeatEval(t) through pipe.unNoneTerminate flatMap chunk
@@ -220,7 +220,7 @@ private class Http2NodeStage(streamId: Int,
       }
     }
 
-    new Http2Writer(this, hs, ec).writeProcess(resp.body).unsafeRunAsync {
+    new Http2Writer(this, hs, executor).writeProcess(resp.body).unsafeRunAsync {
       case Right(_)       => shutdownWithCommand(Cmd.Disconnect)
       case Left(Cmd.EOF) => stageShutdown()
       case Left(t)       => shutdownWithCommand(Cmd.Error(t))

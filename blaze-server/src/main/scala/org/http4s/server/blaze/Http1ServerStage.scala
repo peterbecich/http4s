@@ -27,7 +27,7 @@ private object Http1ServerStage {
 
   def apply(service: HttpService,
             attributes: AttributeMap,
-            pool: ExecutorService,
+            ec: ExecutionContext,
             enableWebSockets: Boolean,
             maxRequestLineLen: Int,
             maxHeadersLen: Int): Http1ServerStage = {
@@ -36,13 +36,13 @@ private object Http1ServerStage {
     if (enableWebSockets) new Http1ServerStage(service, attributes, pool, maxRequestLineLen, maxHeadersLen) with WebSocketSupport
     else                  new Http1ServerStage(service, attributes, pool, maxRequestLineLen, maxHeadersLen)
      */
-    new Http1ServerStage(service, attributes, pool, maxRequestLineLen, maxHeadersLen)
+    new Http1ServerStage(service, attributes, ec, maxRequestLineLen, maxHeadersLen)
   }
 }
 
 private class Http1ServerStage(service: HttpService,
                        requestAttrs: AttributeMap,
-                       pool: ExecutorService,
+                       ec: ExecutionContext,
                        maxRequestLineLen: Int,
                        maxHeadersLen: Int)
                   extends Http1Stage
@@ -52,7 +52,7 @@ private class Http1ServerStage(service: HttpService,
   private[this] val serviceFn = service.run
   private[this] val parser = new Http1ServerParser(logger, maxRequestLineLen, maxHeadersLen)
 
-  protected val ec = ExecutionContext.fromExecutorService(pool)
+  // protected val ec = ExecutionContext.fromExecutorService(pool)
 
   private implicit val strategy =
     Strategy.fromExecutionContext(ec)

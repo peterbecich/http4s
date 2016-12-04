@@ -23,7 +23,7 @@ import org.http4s.util.{Writer, StringWriter}
 trait Http1Stage { self: TailStage[ByteBuffer] =>
   /** ExecutionContext to be used for all Future continuations
     * '''WARNING:''' The ExecutionContext should trampoline or risk possibly unhandled stack overflows */
-  protected implicit def ec: ExecutionContext
+  protected implicit val ec: ExecutionContext
 
   private implicit def strategy: Strategy = Strategy.fromExecutionContext(ec)
 
